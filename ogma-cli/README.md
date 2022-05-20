@@ -19,6 +19,9 @@ verification framework that generates hard real-time C99 code.
 
 - Generating the glue code necessary to work with C structs in Copilot.
 
+- Generating [Robot Operating System](https://ros.org) applications
+  that use Copilot for monitoring data received from the message bus.
+
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/nasa/ogma/gh-pages/images/fret-to-c.gif" alt="Conversion of requirements into C code">
@@ -41,6 +44,7 @@ verification framework that generates hard real-time C99 code.
   - [Language Transformations: FRET](#language-transformations-fret)
   - [cFS Application Generation](#cfs-application-generation)
   - [Struct Interface Generation](#struct-interface-generation)
+  - [ROS Application Generation](#ros-application-generation)
 - [Contributions](#contributions)
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
@@ -108,6 +112,7 @@ Available commands:
                            Specification
   fret-reqs-db             Generate a Copilot file from a FRET Requirements
                            Database
+  ros                      Generate a complete ROS/Copilot application
 ```
 
 ## Language transformations: FRET
@@ -379,6 +384,10 @@ void COPILOT_ProcessIcarousPosition(void)
     step();
 }
 ```
+
+## ROS Application Generation
+
+To be completed.
 
 ## Struct Interface Generation
 
