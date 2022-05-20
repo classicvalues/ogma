@@ -70,6 +70,7 @@ library
     Command.FRETComponentSpec2Copilot
     Command.FRETReqsDB2Copilot
     Command.Result
+    Command.ROSApp
 
     Data.Location
 
