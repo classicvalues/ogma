@@ -70,6 +70,11 @@ rosApp :: FilePath       -- ^ Target directory where the application
        -> IO (Result ErrorCode)
 rosApp targetDir varNameFile varDBFile = do
 
+  let monitors :: [String]
+      monitors = [ "func_on"
+                 , "func_off"
+                 ]
+
   -- We first try to open the two files we need to fill in details in the CFS
   -- app template.
   --
@@ -114,7 +119,7 @@ rosApp targetDir varNameFile varDBFile = do
             let (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
 
             let rosFileName = targetDir </> "copilot" </> "src" </> "copilot_member_function.cpp"
-                rosFileContents = unlines $ fileContents varNames vars ids infos datas
+                rosFileContents = unlines $ fileContents varNames vars ids infos datas monitors
 
             writeFile rosFileName rosFileContents
             return Success
@@ -171,25 +176,24 @@ data MsgData = MsgData
   }
 
 -- | Return the contents of the main CFS application.
-fileContents :: (VarDecl, String, MsgInfo, MsgData)
-             -> [VarDecl] -> [MsgInfoId] -> [MsgInfo] -> [MsgData] -> [String]
-fileContents varNames variables msgIds msgNames msgDatas = rosFileContents
+fileContents :: [String]     -- Variables
+             -> [VarDecl]
+             -> [MsgInfoId]
+             -> [MsgInfo]
+             -> [MsgData]
+             -> [String]     -- Monitors
+             -> [String]
+fileContents varNames variables msgIds msgNames msgDatas monitors = rosFileContents
   where
 
     rosFileContents =
-      [
-      , "#include <functional>"
+      [ "#include <functional>"
       , "#include <memory>"
       , ""
       , "#include \"rclcpp/rclcpp.hpp\""
       , ""
-      , "#include \"std_msgs/msg/u_int8.hpp\""
-      , ""
-      , "#include <cstdint>"
-      , ""
-      , "#include \"monitor.h\""
-      , ""
-      , "#include \"monitor.c\""
+      , typeIncludes
+      , copilotIncludes
       , ""
       , "using std::placeholders::_1;"
       , ""
@@ -210,11 +214,11 @@ fileContents varNames variables msgIds msgNames msgDatas = rosFileContents
       , "  }"
       , ""
       , " private:"
-      , msgCasesS
+      , msgCallbacks
       , msgSubscriptionDeclrs
       , "};"
       , ""
-      , msgHandlerGlobaS
+      , msgHandlerGlobalS
       , ""
       , "int main(int argc, char* argv[]) {"
       , "  rclcpp::init(argc, argv);"
@@ -224,51 +228,16 @@ fileContents varNames variables msgIds msgNames msgDatas = rosFileContents
       , "}"
       ]
 
-    variablesS = unlines $ map toVarDecl variables
-    toVarDecl varDecl = varDeclType' varDecl ++ " " ++ varDeclName varDecl ++ ";"
+    msgHandlerInClassS = unlines $ concatMap msgHandlerInClass monitors
+    msgHandlerInClass monitor =
+        [ "  // Report monitor violations to the log."
+        , "  void " ++ handlerName ++ "() {"
+        , "    RCLCPP_INFO(this->get_logger(), " ++ show handlerName ++ ");"
+        , "  }"
+        ]
       where
-        varDeclType' = case varDeclType of
-          "uint8_t"  -> "std::uint8_t"
-          "uint16_t" -> "std::uint16_t"
-          "uint32_t" -> "std::uint32_t"
-          "uint64_t" -> "std::uint64_t"
-          "int8_t"   -> "std::int8_t"
-          "int16_t"  -> "std::int16_t"
-          "int32_t"  -> "std::int32_t"
-          "int64_t"  -> "std::int64_t"
-          _          -> varDeclType
-
-    msgSubscriptionS     = unlines $ map toMsgSubscription varNames
-    toMsgSubscription nm =
-      "    CFE_SB_Subscribe(" ++ nm ++ ", COPILOT_CommandPipe);"
-
-      , "    temperature_subscription_ = this->create_subscription<std_msgs::msg::UInt8>("
-      , "      \"temperature\", 10,"
-      , "      std::bind(&CopilotRVSubscriber::temperature_callback, this, _1));"
-
-    msgCasesS = unlines $ map toMsgCase msgNames
-    toMsgCase msgInfo = unlines
-      [ "        case " ++ msgInfoId msgInfo ++ ":"
-      , "            COPILOT_Process" ++ msgInfoDesc msgInfo ++ "();"
-      , "            break;"
-      ]
-
-    msgHandlerS = unlines $ map toMsgHandler msgDatas
-    toMsgHandler msgData =
-      unlines [ "/**"
-              , "* Make ICAROUS data available to Copilot and run monitors."
-              , "*/"
-              , "void COPILOT_Process" ++ msgDataDesc msgData ++ "(void)"
-              , "{"
-              , "    " ++ msgDataVarType msgData ++ "* msg;"
-              , "    msg = (" ++ msgDataVarType msgData ++ "*) COPILOTMsgPtr;"
-              , "    " ++ msgDataVarName msgData ++ " = *msg;"
-              , ""
-              , "    // Run all copilot monitors."
-              , "    step();"
-              , "}"
-              ]
-
+        handlerName :: String
+        handlerName = monitor
       -- , "  // Report monitor violations to the log."
       -- , "  void func_on(float temp) {"
       -- , "    RCLCPP_INFO(this->get_logger(), \"On: %f\", temp);"
@@ -279,6 +248,88 @@ fileContents varNames variables msgIds msgNames msgDatas = rosFileContents
       -- , "    RCLCPP_INFO(this->get_logger(), \"Off: %f\", temp);"
       -- , "  }"
 
+    typeIncludes = unlines
+      [ "#include \"std_msgs/msg/u_int8.hpp\""
+      , "#include <cstdint>"
+      ]
+
+    copilotIncludes = unlines
+      [ "#include \"monitor.h\""
+      , "#include \"monitor.c\""
+      ]
+
+    variablesS = unlines $ map toVarDecl variables
+    toVarDecl varDecl =
+        varDeclType' varDecl ++ " " ++ varDeclName varDecl ++ ";"
+      where
+        varDeclType' varDecl = case varDeclType varDecl of
+          "uint8_t"  -> "std::uint8_t"
+          "uint16_t" -> "std::uint16_t"
+          "uint32_t" -> "std::uint32_t"
+          "uint64_t" -> "std::uint64_t"
+          "int8_t"   -> "std::int8_t"
+          "int16_t"  -> "std::int16_t"
+          "int32_t"  -> "std::int32_t"
+          "int64_t"  -> "std::int64_t"
+          def        -> def
+
+    msgSubscriptionS     = unlines $ concatMap toMsgSubscription variables
+    toMsgSubscription nm =
+      [ "    " ++ subscription ++ " = this->create_subscription<" ++ ty ++ ">("
+      , "      \"" ++ topic ++ "\", " ++ show unknownVar ++ ","
+      , "      std::bind(&CopilotRVSubscriber::" ++ callback ++ ", this, _1));"
+      ]
+        -- subscription_ = this->create_subscription<std_msgs::msg::UInt8>(
+        --   "topic", 10, std::bind(&MinimalSubscriber::topic_callback, this, _1));
+      where
+        ty           = varDeclMsgType nm                  -- std_msgs::msg::UInt8
+        topic        = varDeclName nm                     -- temperature
+        subscription = varDeclName nm ++ "_subscription_" -- temperature_subscription_
+        callback     = varDeclName nm ++ "_callback"      -- temperature_callback
+
+        unknownVar   :: Int
+        unknownVar   = 10
+
+    varDeclMsgType varDecl = case varDeclType varDecl of
+      "uint8_t"  -> "std_msgs::msg::UInt8"
+      "uint16_t" -> "std_msgs::msg::UInt16"
+      "uint32_t" -> "std_msgs::msg::UInt32"
+      "uint64_t" -> "std_msgs::msg::UInt64"
+      "int8_t"   -> "std_msgs::msg::Int8"
+      "int16_t"  -> "std_msgs::msg::Int16"
+      "int32_t"  -> "std_msgs::msg::Int32"
+      "int64_t"  -> "std_msgs::msg::Int64"
+      def        -> def
+
+    msgCallbacks = unlines $ map toCallback variables
+    toCallback varDecl = unlines
+      [ "  void " ++ callback ++ "(const " ++ ty ++ "::SharedPtr msg) const {"
+      , "    " ++ variable ++ "msg->data;"
+      , "    step();"
+      , "  }"
+      ]
+      where
+        ty = varDeclMsgType varDecl
+        variable = varDeclName varDecl
+        callback = variable ++ "_callback"
+
+      -- , "  void temperature_callback(const std_msgs::msg::UInt8::SharedPtr msg) const {"
+      -- , "    RCLCPP_INFO(this->get_logger(), \"I heard: '%d'\", msg->data);"
+      -- , "    temperature += msg->data;"
+      -- , "    RCLCPP_INFO(this->get_logger(), \"Executing Copilot monitors\");"
+      -- , "    step();"
+      -- , "  }"
+
+    msgHandlerGlobalS = unlines $ concatMap msgHandlerGlobal monitors
+    msgHandlerGlobal monitor =
+      [ "// Pass monitor violations to the actual class, which has ways to communicate"
+      , "// with other applications."
+      , "  void " ++ handlerName ++ "() {"
+      , "    CopilotRVSubscriber::getInstance()." ++ handlerName ++ "();"
+      , "  }"
+      ]
+      where
+        handlerName = monitor
       -- , "// Pass monitor violations to the actual class, which has ways to communicate"
       -- , "// with other applications."
       -- , "void heaton(float temp) {"
@@ -289,12 +340,13 @@ fileContents varNames variables msgIds msgNames msgDatas = rosFileContents
       -- , "  CopilotRVSubscriber::getInstance().func_off(temp);"
       -- , "}"
 
-      -- , "  void temperature_callback(const std_msgs::msg::UInt8::SharedPtr msg) const {"
-      -- , "    RCLCPP_INFO(this->get_logger(), \"I heard: '%d'\", msg->data);"
-      -- , "    temperature += msg->data;"
-      -- , "    RCLCPP_INFO(this->get_logger(), \"Executing Copilot monitors\");"
-      -- , "    step();"
-      -- , "  }"
+    msgSubscriptionDeclrs :: String
+    msgSubscriptionDeclrs = unlines $ concatMap toSubscriptionDecl variables
+    toSubscriptionDecl nm =
+        [ "    rclcpp::Subscription<" ++ ty ++ ">::SharedPtr " ++ subscription ++ ";" ]
+      where
+        ty           = varDeclMsgType nm -- std_msgs::msg::UInt8
+        subscription = varDeclName nm ++ "_subscription_" -- temperature_subscription_
 
 -- * Exception handlers
 
