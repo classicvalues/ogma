@@ -27,9 +27,9 @@ float heatoff_arg0(void) {
 void step(void) {
   (temperature_cpy) = (temperature);
   if ((heaton_guard)()) {
-    {(heaton)(((heaton_arg0)()));}
+    {(func_on)((()));}
   };
   if ((heatoff_guard)()) {
-    {(heatoff)(((heatoff_arg0)()));}
+    {(func_off)((()));}
   };
 }
