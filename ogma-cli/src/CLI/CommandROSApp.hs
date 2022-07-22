@@ -59,6 +59,7 @@ data CommandOpts = CommandOpts
   { rosAppTarget   :: String
   , rosAppVarNames :: String
   , rosAppVarDB    :: Maybe String
+  , rosAppTriggers :: String
   }
 
 -- | Create <https://www.ros.org/ Robot Operating System> (ROS) applications
@@ -68,7 +69,7 @@ data CommandOpts = CommandOpts
 -- This is just an uncurried version of "Command.ROSApp".
 command :: CommandOpts -> IO (Result ErrorCode)
 command c =
-  rosApp (rosAppTarget c) (rosAppVarNames c) (rosAppVarDB c)
+  rosApp (rosAppTarget c) (rosAppVarNames c) (rosAppVarDB c) (rosAppTriggers c)
 
 -- * CLI
 
@@ -101,6 +102,13 @@ commandOptsParser = CommandOpts
             <> help strROSAppVarDBArgDesc
             )
         )
+  <*> strOption
+        (  long "triggers-file"
+        <> metavar "FILENAME"
+        <> showDefault
+        <> value "triggers"
+        <> help strROSAppTriggerListArgDesc
+        )
 
 -- | Argument target directory to ROS app generation command
 strROSAppDirArgDesc :: String
@@ -115,3 +123,8 @@ strROSAppVarListArgDesc =
 strROSAppVarDBArgDesc :: String
 strROSAppVarDBArgDesc =
   "File containing a DB of known ROS variables"
+
+-- | Argument trigger list to ROS app generation command
+strROSAppTriggerListArgDesc :: String
+strROSAppTriggerListArgDesc =
+  "File containing list of Copilot triggers used in the specification"

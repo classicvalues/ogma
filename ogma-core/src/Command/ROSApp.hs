@@ -65,13 +65,11 @@ rosApp :: FilePath       -- ^ Target directory where the application
        -> Maybe FilePath -- ^ File containing a list of known variables
                          --   with their types and the message IDs they
                          --   can be obtained from.
+       -> FilePath       -- ^ File containing a list of triggers used in the
+                         --   Copilot specification. The triggers are assumed
+                         --   to receive no arguments.
        -> IO (Result ErrorCode)
-rosApp targetDir varNameFile varDBFile = do
-
-  let monitors :: [String]
-      monitors = [ "func_on"
-                 , "func_off"
-                 ]
+rosApp targetDir varNameFile varDBFile triggersFile = do
 
   -- We first try to open the two files we need to fill in details in the CFS
   -- app template.
@@ -99,28 +97,48 @@ rosApp targetDir varNameFile varDBFile = do
         Right []       -> return $ cannotEmptyVarList varNameFile
         Right varNames -> do
 
-          -- Obtain template dir
-          dataDir <- getDataDir
-          let templateDir = dataDir </> "templates" </> "ros"
+          -- The trigger list is mandatory. This check fails if the filename
+          -- provided does not exist or if the file cannot be opened. The
+          -- condition on the result also checks that the list of tiggers in
+          -- the file is not empty (otherwise, we do not know when to call
+          -- Copilot).
+          triggerNamesE <- E.try $ lines <$> readFile triggersFile
 
-          E.handle (return . cannotCopyTemplate) $ do
-            -- Expand template
-            copyDirectoryRecursive templateDir targetDir
+          case triggerNamesE of
+            Left e         -> return $ cannotOpenTriggersFile triggersFile e
+            Right []       -> return $ cannotEmptyTriggerList triggersFile
+            Right monitors -> do
 
-            let f n o@(oVars, oIds, oInfos, oDatas) =
-                  case variableMap varDB n of
-                    Nothing -> o
-                    Just (vars, ids, infos, datas) ->
-                      (vars : oVars, ids : oIds, infos : oInfos, datas : oDatas)
+              -- Obtain template dir
+              dataDir <- getDataDir
+              let templateDir = dataDir </> "templates" </> "ros"
 
-            -- This is a Data.List.unzip4
-            let (vars, ids, infos, datas) = foldr f ([], [], [], []) varNames
+              E.handle (return . cannotCopyTemplate) $ do
+                -- Expand template
+                copyDirectoryRecursive templateDir targetDir
 
-            let rosFileName = targetDir </> "src" </> "copilot_member_function.cpp"
-                rosFileContents = unlines $ fileContents varNames vars ids infos datas monitors
+                let f n o@(oVars, oIds, oInfos, oDatas) =
+                      case variableMap varDB n of
+                        Nothing -> o
+                        Just (vars, ids, infos, datas) ->
+                          ( vars : oVars
+                          , ids : oIds
+                          , infos : oInfos
+                          , datas : oDatas
+                          )
 
-            writeFile rosFileName rosFileContents
-            return Success
+                -- This is a Data.List.unzip4
+                let (vars, ids, infos, datas) =
+                      foldr f ([], [], [], []) varNames
+
+                let rosFileName =
+                      targetDir </> "src" </> "copilot_member_function.cpp"
+                    rosFileContents =
+                      unlines $
+                        fileContents varNames vars ids infos datas monitors
+
+                writeFile rosFileName rosFileContents
+                return Success
 
 -- | Predefined list of Icarous variables that are known to Ogma
 knownVars :: [(String, String, String, String)]
@@ -380,6 +398,24 @@ cannotEmptyVarList file =
     msg =
       "variable list in file " ++ file ++ " is empty"
 
+-- | Exception handler to deal with the case in which the triggers file
+-- provided by the user cannot be opened.
+cannotOpenTriggersFile :: FilePath -> E.SomeException -> Result ErrorCode
+cannotOpenTriggersFile file _e =
+    Error ecCannotOpenTriggersFile  msg (LocationFile file)
+  where
+    msg =
+      "cannot open trigger list file " ++ file
+
+-- | Exception handler to deal with the case of the trigger file provided
+-- containing an empty list.
+cannotEmptyTriggerList :: FilePath -> Result ErrorCode
+cannotEmptyTriggerList file =
+    Error ecCannotEmptyTriggerList msg (LocationFile file)
+  where
+    msg =
+      "Trigger list in file " ++ file ++ " is empty"
+
 -- | Exception handler to deal with the case of files that cannot be
 -- copied/generated due lack of space or permissions or some I/O error.
 cannotCopyTemplate :: E.SomeException -> Result ErrorCode
@@ -413,6 +449,14 @@ ecCannotOpenVarFile = 1
 -- | Error: the variable file provided contains an empty list.
 ecCannotEmptyVarList :: ErrorCode
 ecCannotEmptyVarList = 1
+
+-- | Error: the triggers file provided by the user cannot be opened.
+ecCannotOpenTriggersFile :: ErrorCode
+ecCannotOpenTriggersFile = 1
+
+-- | Error: the triggers file provided contains an empty list.
+ecCannotEmptyTriggerList :: ErrorCode
+ecCannotEmptyTriggerList = 1
 
 -- | Error: the files cannot be copied/generated due lack of space or
 -- permissions or some I/O error.
