@@ -256,7 +256,15 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
         handlerName = monitor
 
     typeIncludes = unlines
-      [ "#include \"std_msgs/msg/u_int8.hpp\""
+      [ "#include \"std_msgs/msg/bool.hpp\""
+      , "#include \"std_msgs/msg/u_int8.hpp\""
+      , "#include \"std_msgs/msg/u_int16.hpp\""
+      , "#include \"std_msgs/msg/u_int32.hpp\""
+      , "#include \"std_msgs/msg/u_int64.hpp\""
+      , "#include \"std_msgs/msg/int8.hpp\""
+      , "#include \"std_msgs/msg/int16.hpp\""
+      , "#include \"std_msgs/msg/int32.hpp\""
+      , "#include \"std_msgs/msg/int64.hpp\""
       , "#include <cstdint>"
       ]
 
