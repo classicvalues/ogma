@@ -19,8 +19,8 @@ verification framework that generates hard real-time C99 code.
 
 - Generating the glue code necessary to work with C structs in Copilot.
 
-- Generating [Robot Operating System](https://ros.org) applications
-  that use Copilot for monitoring data received from the message bus.
+- Generating [Robot Operating System](https://ros.org) applications that use
+  Copilot for monitoring data published in different topics.
 
 
 <p align="center">
