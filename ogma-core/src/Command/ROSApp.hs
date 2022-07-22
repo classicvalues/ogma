@@ -28,14 +28,12 @@
 -- FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS
 -- AGREEMENT.
 --
--- | Create <https://ros.gsfc.nasa.gov/ NASA Core Flight System> (CFS)
--- applications that subscribe to the communication bus and call Copilot when
--- new messages arrive.
+-- | Create <https://www.ros.org/ Robot Operating System> (ROS) applications
+-- that subscribe to obtain data and call Copilot when new values arrive.
 --
--- The applications are created ready to be extracted in the application
--- directory in CFS, and they subscribe to a generic monitor. It is the user's
--- responsibility to modify the generated Copilot and C code to deal with the
--- monitors they'd like to implement, and the data they must manipulate.
+-- It is the user's responsibility to modify the generated Copilot/C/C++ code
+-- to deal with the monitors they'd like to implement, and the data they must
+-- manipulate.
 
 {- HLINT ignore "Functor law" -}
 module Command.ROSApp
