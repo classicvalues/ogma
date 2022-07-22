@@ -199,17 +199,17 @@ fileContents varNames variables msgIds msgNames msgDatas monitors = rosFileConte
       , ""
       , variablesS
       , ""
-      , "class CopilotRVSubscriber : public rclcpp::Node {"
+      , "class CopilotRV : public rclcpp::Node {"
       , " public:"
-      , "  CopilotRVSubscriber() : Node(\"minimal_subscriber\") {"
+      , "  CopilotRV() : Node(\"copilotrv\") {"
       , msgSubscriptionS
       , "  }"
       , ""
       , msgHandlerInClassS
       , ""
       , "  // Needed so we can report messages to the log."
-      , "  static CopilotRVSubscriber& getInstance() {"
-      , "    static CopilotRVSubscriber instance;"
+      , "  static CopilotRV& getInstance() {"
+      , "    static CopilotRV instance;"
       , "    return instance;"
       , "  }"
       , ""
@@ -222,7 +222,7 @@ fileContents varNames variables msgIds msgNames msgDatas monitors = rosFileConte
       , ""
       , "int main(int argc, char* argv[]) {"
       , "  rclcpp::init(argc, argv);"
-      , "  rclcpp::spin(std::make_shared<CopilotRVSubscriber>());"
+      , "  rclcpp::spin(std::make_shared<CopilotRV>());"
       , "  rclcpp::shutdown();"
       , "  return 0;"
       , "}"
@@ -277,7 +277,7 @@ fileContents varNames variables msgIds msgNames msgDatas monitors = rosFileConte
     toMsgSubscription nm =
       [ "    " ++ subscription ++ " = this->create_subscription<" ++ ty ++ ">("
       , "      \"" ++ topic ++ "\", " ++ show unknownVar ++ ","
-      , "      std::bind(&CopilotRVSubscriber::" ++ callback ++ ", this, _1));"
+      , "      std::bind(&CopilotRV::" ++ callback ++ ", this, _1));"
       ]
         -- subscription_ = this->create_subscription<std_msgs::msg::UInt8>(
         --   "topic", 10, std::bind(&MinimalSubscriber::topic_callback, this, _1));
@@ -325,7 +325,7 @@ fileContents varNames variables msgIds msgNames msgDatas monitors = rosFileConte
       [ "  // Pass monitor violations to the actual class, which has ways to communicate"
       , "  // with other applications."
       , "  void " ++ handlerName ++ "() {"
-      , "    CopilotRVSubscriber::getInstance()." ++ handlerName ++ "();"
+      , "    CopilotRV::getInstance()." ++ handlerName ++ "();"
       , "  }"
       ]
       where
@@ -333,11 +333,11 @@ fileContents varNames variables msgIds msgNames msgDatas monitors = rosFileConte
       -- , "// Pass monitor violations to the actual class, which has ways to communicate"
       -- , "// with other applications."
       -- , "void heaton(float temp) {"
-      -- , "  CopilotRVSubscriber::getInstance().func_on(temp);"
+      -- , "  CopilotRV::getInstance().func_on(temp);"
       -- , "}"
       -- , ""
       -- , "void heatoff(float temp) {"
-      -- , "  CopilotRVSubscriber::getInstance().func_off(temp);"
+      -- , "  CopilotRV::getInstance().func_off(temp);"
       -- , "}"
 
     msgSubscriptionDeclrs :: String
