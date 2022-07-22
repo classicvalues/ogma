@@ -68,7 +68,7 @@ command c = lustre2Copilot (lustreFileName c)
 
 -- | Command description for CLI help.
 commandDesc :: String
-commandDesc = "Generate Copilot spec from Lustre node definition"
+commandDesc = "Generate a Copilot spec from a Lustre node definition"
 
 -- | Subparser for the @lustre@ command, used to generate Copilot declarations
 -- from Lustre.

@@ -87,7 +87,8 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >                           Specification
                      >  fret-reqs-db             Generate a Copilot file from a FRET Requirements
                      >                           Database
-                     >  lustre                   Generate Copilot spec from Lustre node definition
+                     >  lustre                   Generate a Copilot spec from a Lustre node
+                     >                           definition
                      .
                      For further information, see:
                      .
