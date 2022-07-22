@@ -77,8 +77,8 @@ command c =
 commandDesc :: String
 commandDesc = "Generate a complete ROS/Copilot application"
 
--- | Subparser for the @ros@ command, used to generate a NASA Core Flight
--- System application connected to Copilot monitors.
+-- | Subparser for the @ros@ command, used to generate a Robot Operating System
+-- application connected to Copilot monitors.
 commandOptsParser :: Parser CommandOpts
 commandOptsParser = CommandOpts
   <$> strOption
