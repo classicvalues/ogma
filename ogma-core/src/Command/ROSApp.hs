@@ -65,11 +65,11 @@ rosApp :: FilePath       -- ^ Target directory where the application
        -> Maybe FilePath -- ^ File containing a list of known variables
                          --   with their types and the message IDs they
                          --   can be obtained from.
-       -> FilePath       -- ^ File containing a list of triggers used in the
-                         --   Copilot specification. The triggers are assumed
+       -> FilePath       -- ^ File containing a list of handlers used in the
+                         --   Copilot specification. The handlers are assumed
                          --   to receive no arguments.
        -> IO (Result ErrorCode)
-rosApp targetDir varNameFile varDBFile triggersFile = do
+rosApp targetDir varNameFile varDBFile handlersFile = do
 
   -- We first try to open the files we need to fill in details in the ROS app
   -- template.
@@ -97,16 +97,16 @@ rosApp targetDir varNameFile varDBFile triggersFile = do
         Right []       -> return $ cannotEmptyVarList varNameFile
         Right varNames -> do
 
-          -- The trigger list is mandatory. This check fails if the filename
+          -- The handler list is mandatory. This check fails if the filename
           -- provided does not exist or if the file cannot be opened. The
           -- condition on the result also checks that the list of tiggers in
           -- the file is not empty (otherwise, we do not know when to call
           -- Copilot).
-          triggerNamesE <- E.try $ lines <$> readFile triggersFile
+          handlerNamesE <- E.try $ lines <$> readFile handlersFile
 
-          case triggerNamesE of
-            Left e         -> return $ cannotOpenTriggersFile triggersFile e
-            Right []       -> return $ cannotEmptyTriggerList triggersFile
+          case handlerNamesE of
+            Left e         -> return $ cannotOpenHandlersFile handlersFile e
+            Right []       -> return $ cannotEmptyHandlerList handlersFile
             Right monitors -> do
 
               -- Obtain template dir
@@ -375,23 +375,23 @@ cannotEmptyVarList file =
     msg =
       "variable list in file " ++ file ++ " is empty"
 
--- | Exception handler to deal with the case in which the triggers file
+-- | Exception handler to deal with the case in which the handlers file
 -- provided by the user cannot be opened.
-cannotOpenTriggersFile :: FilePath -> E.SomeException -> Result ErrorCode
-cannotOpenTriggersFile file _e =
-    Error ecCannotOpenTriggersFile  msg (LocationFile file)
+cannotOpenHandlersFile :: FilePath -> E.SomeException -> Result ErrorCode
+cannotOpenHandlersFile file _e =
+    Error ecCannotOpenHandlersFile  msg (LocationFile file)
   where
     msg =
-      "cannot open trigger list file " ++ file
+      "cannot open handler list file " ++ file
 
--- | Exception handler to deal with the case of the trigger file provided
+-- | Exception handler to deal with the case of the handler file provided
 -- containing an empty list.
-cannotEmptyTriggerList :: FilePath -> Result ErrorCode
-cannotEmptyTriggerList file =
-    Error ecCannotEmptyTriggerList msg (LocationFile file)
+cannotEmptyHandlerList :: FilePath -> Result ErrorCode
+cannotEmptyHandlerList file =
+    Error ecCannotEmptyHandlerList msg (LocationFile file)
   where
     msg =
-      "Trigger list in file " ++ file ++ " is empty"
+      "Handler list in file " ++ file ++ " is empty"
 
 -- | Exception handler to deal with the case of files that cannot be
 -- copied/generated due lack of space or permissions or some I/O error.
@@ -427,13 +427,13 @@ ecCannotOpenVarFile = 1
 ecCannotEmptyVarList :: ErrorCode
 ecCannotEmptyVarList = 1
 
--- | Error: the triggers file provided by the user cannot be opened.
-ecCannotOpenTriggersFile :: ErrorCode
-ecCannotOpenTriggersFile = 1
+-- | Error: the handlers file provided by the user cannot be opened.
+ecCannotOpenHandlersFile :: ErrorCode
+ecCannotOpenHandlersFile = 1
 
--- | Error: the triggers file provided contains an empty list.
-ecCannotEmptyTriggerList :: ErrorCode
-ecCannotEmptyTriggerList = 1
+-- | Error: the handlers file provided contains an empty list.
+ecCannotEmptyHandlerList :: ErrorCode
+ecCannotEmptyHandlerList = 1
 
 -- | Error: the files cannot be copied/generated due lack of space or
 -- permissions or some I/O error.
