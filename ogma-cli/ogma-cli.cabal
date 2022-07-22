@@ -66,6 +66,8 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                        applications to make external data in structs available
                        to a Copilot monitor.
                      .
+                     - Generating Copilot specs from Lustre node definitions.
+                     .
                      The main invocation with @--help@ lists sub-commands available.
                      .
                      >$ ogma --help
@@ -85,6 +87,7 @@ description:         Ogma is a tool to facilitate the integration of safe runtim
                      >                           Specification
                      >  fret-reqs-db             Generate a Copilot file from a FRET Requirements
                      >                           Database
+                     >  lustre                   Generate Copilot spec from Lustre node definition
                      .
                      For further information, see:
                      .
@@ -111,6 +114,7 @@ executable ogma
     CLI.CommandCStructs2MsgHandlers
     CLI.CommandFretComponentSpec2Copilot
     CLI.CommandFretReqsDB2Copilot
+    CLI.CommandLustre2Copilot
     CLI.CommandTop
     CLI.Result
 

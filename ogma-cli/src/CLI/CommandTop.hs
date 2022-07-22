@@ -91,6 +91,7 @@ import qualified CLI.CommandCStructs2Copilot
 import qualified CLI.CommandCStructs2MsgHandlers
 import qualified CLI.CommandFretComponentSpec2Copilot
 import qualified CLI.CommandFretReqsDB2Copilot
+import qualified CLI.CommandLustre2Copilot
 
 -- * Command
 
@@ -105,6 +106,7 @@ data CommandOpts =
   | CommandOptsCStructs2MsgHandlers      CLI.CommandCStructs2MsgHandlers.CommandOpts
   | CommandOptsFretComponentSpec2Copilot CLI.CommandFretComponentSpec2Copilot.CommandOpts
   | CommandOptsFretReqsDB2Copilot        CLI.CommandFretReqsDB2Copilot.CommandOpts
+  | CommandOptsLustre2Copilot            CLI.CommandLustre2Copilot.CommandOpts
 
 -- * CLI
 
@@ -121,6 +123,7 @@ commandOptsParser = subparser
   <> subcommandCFSApp
   <> subcommandFretComponentSpec
   <> subcommandFretReqs
+  <> subcommandLustre
   )
 
 -- | Modifier for the CStruct to Copilot Struct generation subcommand, linking
@@ -175,6 +178,16 @@ subcommandFretReqs =
        <$> CLI.CommandFretReqsDB2Copilot.commandOptsParser)
     CLI.CommandFretReqsDB2Copilot.commandDesc
 
+-- | Modifier for the Lustre to Copilot generation subcommand, linking the
+-- subcommand options and description to the command @lustre@ at top level.
+subcommandLustre :: Mod CommandFields CommandOpts
+subcommandLustre =
+  subcommand
+    "lustre"
+    (CommandOptsLustre2Copilot
+       <$> CLI.CommandLustre2Copilot.commandOptsParser)
+    CLI.CommandLustre2Copilot.commandDesc
+
 -- * Command dispatcher
 
 -- | Command dispatcher that obtains the parameters from the command line and
@@ -207,6 +220,8 @@ command (CommandOptsFretComponentSpec2Copilot c) =
   id <$> CLI.CommandFretComponentSpec2Copilot.command c
 command (CommandOptsFretReqsDB2Copilot c) =
   id <$> CLI.CommandFretReqsDB2Copilot.command c
+command (CommandOptsLustre2Copilot c) =
+  id <$> CLI.CommandLustre2Copilot.command c
 
 -- We indicate to HLint that the use of (id <$>) above should not trigger a
 -- warning. Conceptually, there is a transformation taking place, but no change
