@@ -61,13 +61,12 @@ library
     Language.Copilot.AbsCopilot
     Language.Copilot.LexCopilot
     Language.Copilot.ParCopilot
-    Language.Copilot.PrintCopilot
+    Language.Copilot.PrintCopilotNew
 
   autogen-modules:
     Language.Copilot.AbsCopilot
     Language.Copilot.LexCopilot
     Language.Copilot.ParCopilot
-    Language.Copilot.PrintCopilot
 
   build-depends:
       base  >= 4.11.0.0 && < 5
