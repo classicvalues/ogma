@@ -199,7 +199,7 @@ fileContents :: [String]     -- Variables
              -> [String]     -- Monitors
              -> [String]
 fileContents varNames variables msgIds msgNames msgDatas monitors =
-   rosFileContents
+    rosFileContents
 
   where
 
@@ -315,11 +315,12 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
                  $ intersperse [""]
                  $ map toCallback variables
     toCallback varDecl =
-      [ "    void " ++ callback ++ "(const " ++ ty ++ "::SharedPtr msg) const {"
-      , "      " ++ variable ++ " = msg->data;"
-      , "      step();"
-      , "    }"
-      ]
+        [ "    void " ++ callback
+                      ++ "(const " ++ ty ++ "::SharedPtr msg) const {"
+        , "      " ++ variable ++ " = msg->data;"
+        , "      step();"
+        , "    }"
+        ]
       where
         ty = varDeclMsgType varDecl
         variable = varDeclName varDecl
