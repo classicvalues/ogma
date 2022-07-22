@@ -71,8 +71,8 @@ rosApp :: FilePath       -- ^ Target directory where the application
        -> IO (Result ErrorCode)
 rosApp targetDir varNameFile varDBFile triggersFile = do
 
-  -- We first try to open the two files we need to fill in details in the ROS
-  -- app template.
+  -- We first try to open the files we need to fill in details in the ROS app
+  -- template.
   --
   -- The variable DB is optional, so this check only fails if the filename
   -- provided does not exist or if the file cannot be opened or parsed (wrong
