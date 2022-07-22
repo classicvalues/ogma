@@ -199,7 +199,9 @@ fileContents :: [String]     -- Variables
              -> [MsgData]
              -> [String]     -- Monitors
              -> [String]
-fileContents varNames variables msgIds msgNames msgDatas monitors = rosFileContents
+fileContents varNames variables msgIds msgNames msgDatas monitors =
+   rosFileContents
+
   where
 
     rosFileContents =
@@ -282,10 +284,11 @@ fileContents varNames variables msgIds msgNames msgDatas monitors = rosFileConte
 
     msgSubscriptionS     = unlines $ concatMap toMsgSubscription variables
     toMsgSubscription nm =
-      [ "    " ++ subscription ++ " = this->create_subscription<" ++ ty ++ ">("
-      , "      \"" ++ topic ++ "\", " ++ show unknownVar ++ ","
-      , "      std::bind(&CopilotRV::" ++ callback ++ ", this, _1));"
-      ]
+        [ "    " ++ subscription
+                 ++ " = this->create_subscription<" ++ ty ++ ">("
+        , "      \"" ++ topic ++ "\", " ++ show unknownVar ++ ","
+        , "      std::bind(&CopilotRV::" ++ callback ++ ", this, _1));"
+        ]
       where
         ty           = varDeclMsgType nm
         topic        = varDeclName nm
@@ -320,8 +323,8 @@ fileContents varNames variables msgIds msgNames msgDatas monitors = rosFileConte
 
     msgHandlerGlobalS = unlines $ concatMap msgHandlerGlobal monitors
     msgHandlerGlobal monitor =
-        [ "// Pass monitor violations to the actual class, which has ways to communicate"
-        , "// with other applications."
+        [ "// Pass monitor violations to the actual class, which has ways to "
+        , "// communicate with other applications."
         , "void " ++ handlerName ++ "() {"
         , "  CopilotRV::getInstance()." ++ handlerName ++ "();"
         , "}"
@@ -332,7 +335,9 @@ fileContents varNames variables msgIds msgNames msgDatas monitors = rosFileConte
     msgSubscriptionDeclrs :: String
     msgSubscriptionDeclrs = unlines $ concatMap toSubscriptionDecl variables
     toSubscriptionDecl nm =
-        [ "  rclcpp::Subscription<" ++ ty ++ ">::SharedPtr " ++ subscription ++ ";" ]
+        [ "  rclcpp::Subscription<" ++ ty ++ ">::SharedPtr "
+            ++ subscription ++ ";"
+        ]
       where
         ty           = varDeclMsgType nm
         subscription = varDeclName nm ++ "_subscription_"
