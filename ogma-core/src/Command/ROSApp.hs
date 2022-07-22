@@ -338,11 +338,11 @@ fileContents varNames variables msgIds msgNames msgDatas monitors = rosFileConte
 
     msgHandlerGlobalS = unlines $ concatMap msgHandlerGlobal monitors
     msgHandlerGlobal monitor =
-      [ "  // Pass monitor violations to the actual class, which has ways to communicate"
-      , "  // with other applications."
-      , "  void " ++ handlerName ++ "() {"
-      , "    CopilotRV::getInstance()." ++ handlerName ++ "();"
-      , "  }"
+      [ "// Pass monitor violations to the actual class, which has ways to communicate"
+      , "// with other applications."
+      , "void " ++ handlerName ++ "() {"
+      , "  CopilotRV::getInstance()." ++ handlerName ++ "();"
+      , "}"
       ]
       where
         handlerName = monitor
