@@ -44,7 +44,7 @@ module Command.ROSApp
 
 -- External imports
 import qualified Control.Exception as E
-import           Data.List         ( find )
+import           Data.List         ( find, intersperse )
 import           System.FilePath   ( (</>) )
 
 -- External imports: auxiliary
@@ -211,32 +211,28 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
       , ""
       , typeIncludes
       , copilotIncludes
-      , ""
       , "using std::placeholders::_1;"
       , ""
       , variablesS
-      , ""
       , "class CopilotRV : public rclcpp::Node {"
-      , " public:"
-      , "  CopilotRV() : Node(\"copilotrv\") {"
+      , "  public:"
+      , "    CopilotRV() : Node(\"copilotrv\") {"
       , msgSubscriptionS
-      , "  }"
+      , "    }"
       , ""
       , msgHandlerInClassS
+      , "    // Needed so we can report messages to the log."
+      , "    static CopilotRV& getInstance() {"
+      , "      static CopilotRV instance;"
+      , "      return instance;"
+      , "    }"
       , ""
-      , "  // Needed so we can report messages to the log."
-      , "  static CopilotRV& getInstance() {"
-      , "    static CopilotRV instance;"
-      , "    return instance;"
-      , "  }"
-      , ""
-      , "private:"
+      , "  private:"
       , msgCallbacks
       , msgSubscriptionDeclrs
       , "};"
       , ""
       , msgHandlerGlobalS
-      , ""
       , "int main(int argc, char* argv[]) {"
       , "  rclcpp::init(argc, argv);"
       , "  rclcpp::spin(std::make_shared<CopilotRV>());"
@@ -245,12 +241,15 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
       , "}"
       ]
 
-    msgHandlerInClassS = unlines $ concatMap msgHandlerInClass monitors
+    msgHandlerInClassS = unlines
+                       $ concat
+                       $ intersperse [""]
+                       $ map msgHandlerInClass monitors
     msgHandlerInClass monitor =
-        [ "  // Report monitor violations to the log."
-        , "  void " ++ handlerName ++ "() {"
-        , "    RCLCPP_INFO(this->get_logger(), " ++ show handlerName ++ ");"
-        , "  }"
+        [ "    // Report monitor violations to the log."
+        , "    void " ++ handlerName ++ "() {"
+        , "      RCLCPP_INFO(this->get_logger(), " ++ show handlerName ++ ");"
+        , "    }"
         ]
       where
         handlerName :: String
@@ -281,12 +280,15 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
           "int64_t"  -> "std::int64_t"
           def        -> def
 
-    msgSubscriptionS     = unlines $ concatMap toMsgSubscription variables
+    msgSubscriptionS     = unlines
+                         $ concat
+                         $ intersperse [""]
+                         $ map toMsgSubscription variables
     toMsgSubscription nm =
-        [ "    " ++ subscription
-                 ++ " = this->create_subscription<" ++ ty ++ ">("
-        , "      \"" ++ topic ++ "\", " ++ show unknownVar ++ ","
-        , "      std::bind(&CopilotRV::" ++ callback ++ ", this, _1));"
+        [ "      " ++ subscription
+                   ++ " = this->create_subscription<" ++ ty ++ ">("
+        , "        \"" ++ topic ++ "\", " ++ show unknownVar ++ ","
+        , "        std::bind(&CopilotRV::" ++ callback ++ ", this, _1));"
         ]
       where
         ty           = varDeclMsgType nm
@@ -308,21 +310,27 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
       "int64_t"  -> "std_msgs::msg::Int64"
       def        -> def
 
-    msgCallbacks = unlines $ map toCallback variables
-    toCallback varDecl = unlines
-      [ "  void " ++ callback ++ "(const " ++ ty ++ "::SharedPtr msg) const {"
-      , "    " ++ variable ++ " = msg->data;"
-      , "    step();"
-      , "  }"
+    msgCallbacks = unlines
+                 $ concat
+                 $ intersperse [""]
+                 $ map toCallback variables
+    toCallback varDecl =
+      [ "    void " ++ callback ++ "(const " ++ ty ++ "::SharedPtr msg) const {"
+      , "      " ++ variable ++ " = msg->data;"
+      , "      step();"
+      , "    }"
       ]
       where
         ty = varDeclMsgType varDecl
         variable = varDeclName varDecl
         callback = variable ++ "_callback"
 
-    msgHandlerGlobalS = unlines $ concatMap msgHandlerGlobal monitors
+    msgHandlerGlobalS = unlines
+                      $ concat
+                      $ intersperse [""]
+                      $ map msgHandlerGlobal monitors
     msgHandlerGlobal monitor =
-        [ "// Pass monitor violations to the actual class, which has ways to "
+        [ "// Pass monitor violations to the actual class, which has ways to"
         , "// communicate with other applications."
         , "void " ++ handlerName ++ "() {"
         , "  CopilotRV::getInstance()." ++ handlerName ++ "();"
@@ -332,9 +340,12 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
         handlerName = monitor
 
     msgSubscriptionDeclrs :: String
-    msgSubscriptionDeclrs = unlines $ concatMap toSubscriptionDecl variables
+    msgSubscriptionDeclrs = unlines
+                          $ concat
+                          $ intersperse [""]
+                          $ map toSubscriptionDecl variables
     toSubscriptionDecl nm =
-        [ "  rclcpp::Subscription<" ++ ty ++ ">::SharedPtr "
+        [ "    rclcpp::Subscription<" ++ ty ++ ">::SharedPtr "
             ++ subscription ++ ";"
         ]
       where
