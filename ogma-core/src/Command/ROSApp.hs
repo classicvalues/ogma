@@ -140,10 +140,9 @@ rosApp targetDir varNameFile varDBFile triggersFile = do
                 writeFile rosFileName rosFileContents
                 return Success
 
--- | Predefined list of Icarous variables that are known to Ogma
+-- | Predefined list of ROS variables that are known to Ogma
 knownVars :: [(String, String, String, String)]
-knownVars =
-  [ ("position", "position_t", "ICAROUS_POSITION_MID", "IcarousPosition") ]
+knownVars = []
 
 -- | Return the variable information needed to generate declarations
 -- and subscriptions for a given variable name and variable database.
