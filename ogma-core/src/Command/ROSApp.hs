@@ -71,7 +71,7 @@ rosApp :: FilePath       -- ^ Target directory where the application
        -> IO (Result ErrorCode)
 rosApp targetDir varNameFile varDBFile triggersFile = do
 
-  -- We first try to open the two files we need to fill in details in the CFS
+  -- We first try to open the two files we need to fill in details in the ROS
   -- app template.
   --
   -- The variable DB is optional, so this check only fails if the filename
@@ -161,7 +161,7 @@ variableMap varDB varName =
              -> Bool
     sameName n (vn, _, _, _) = n == vn
 
-    -- Convert a DB row into Variable info needed to generate the CFS file
+    -- Convert a DB row into Variable info needed to generate the ROS file
     csvToVarMap :: (String, String, String, String)
                 -> (VarDecl, String, MsgInfo, MsgData)
     csvToVarMap (nm, ty, mid, mn) =
@@ -191,7 +191,7 @@ data MsgData = MsgData
   , msgDataVarType :: String
   }
 
--- | Return the contents of the main CFS application.
+-- | Return the contents of the main ROS application.
 fileContents :: [String]     -- Variables
              -> [VarDecl]
              -> [MsgInfoId]
