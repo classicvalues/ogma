@@ -69,6 +69,7 @@ library
     Command.CStructs2MsgHandlers
     Command.FRETComponentSpec2Copilot
     Command.FRETReqsDB2Copilot
+    Command.Lustre2Copilot
     Command.Result
 
     Data.Location
@@ -79,6 +80,7 @@ library
     Language.Trans.CStructs2MsgHandlers
     Language.Trans.FRETComponentSpec2Copilot
     Language.Trans.FRETReqsDB2Copilot
+    Language.Trans.Lustre2Copilot
     Language.Trans.SMV2Copilot
 
   other-modules:
@@ -99,6 +101,7 @@ library
     , ogma-language-copilot   >= 1.0.0 && < 1.1
     , ogma-language-fret-cs   >= 1.0.0 && < 1.1
     , ogma-language-fret-reqs >= 1.0.0 && < 1.1
+    , ogma-language-lustre    >= 1.0.0 && < 1.1
     , ogma-language-smv       >= 1.0.0 && < 1.1
 
   hs-source-dirs:
