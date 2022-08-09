@@ -218,6 +218,7 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
       , "  public:"
       , "    CopilotRV() : Node(\"copilotrv\") {"
       , msgSubscriptionS
+      , msgPublisherS
       , "    }"
       , ""
       , msgHandlerInClassS
@@ -230,6 +231,7 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
       , "  private:"
       , msgCallbacks
       , msgSubscriptionDeclrs
+      , msgPublisherDeclrs
       , "};"
       , ""
       , msgHandlerGlobalS
@@ -246,17 +248,24 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
                        $ intersperse [""]
                        $ map msgHandlerInClass monitors
     msgHandlerInClass monitor =
-        [ "    // Report monitor violations to the log."
+        [ "    // Report monitor violations to the log and publish them."
         , "    void " ++ handlerName ++ "() {"
         , "      RCLCPP_INFO(this->get_logger(), " ++ show handlerName ++ ");"
+        , "      auto output = " ++ ty ++ "();"
+        , "      " ++ publisher ++ "->publish(output);"
         , "    }"
         ]
       where
         handlerName :: String
         handlerName = monitor
 
+        ty = "std_msgs::msg::Empty"
+
+        publisher = monitor ++ "_publisher_"
+
     typeIncludes = unlines
       [ "#include \"std_msgs/msg/bool.hpp\""
+      , "#include \"std_msgs/msg/empty.hpp\""
       , "#include \"std_msgs/msg/u_int8.hpp\""
       , "#include \"std_msgs/msg/u_int16.hpp\""
       , "#include \"std_msgs/msg/u_int32.hpp\""
@@ -303,6 +312,24 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
         topic        = varDeclName nm
         subscription = varDeclName nm ++ "_subscription_"
         callback     = varDeclName nm ++ "_callback"
+
+        unknownVar   :: Int
+        unknownVar   = 10
+
+    msgPublisherS = unlines
+                  $ concat
+                  $ intersperse [""]
+                  $ map toMsgPublisher monitors
+
+    toMsgPublisher nm =
+        [ "      " ++ publisher
+                   ++ " = this->create_publisher<" ++ ty ++ ">("
+        , "        \"" ++ topic ++ "\", " ++ show unknownVar ++ ");"
+        ]
+      where
+        ty        = "std_msgs::msg::Empty"
+        publisher = nm ++ "_publisher_"
+        topic     = "copilot/" ++ nm
 
         unknownVar   :: Int
         unknownVar   = 10
@@ -360,6 +387,19 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
       where
         ty           = varDeclMsgType nm
         subscription = varDeclName nm ++ "_subscription_"
+
+    msgPublisherDeclrs :: String
+    msgPublisherDeclrs = unlines
+                       $ concat
+                       $ intersperse [""]
+                       $ map toPublisherDecl monitors
+    toPublisherDecl nm =
+        [ "    rclcpp::Publisher<" ++ ty ++ ">::SharedPtr "
+            ++ publisher ++ ";"
+        ]
+      where
+        ty        = "std_msgs::msg::Empty"
+        publisher = nm ++ "_publisher_"
 
 -- * Exception handlers
 
