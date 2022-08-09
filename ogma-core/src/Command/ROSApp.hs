@@ -138,6 +138,15 @@ rosApp targetDir varNameFile varDBFile handlersFile = do
                         fileContents varNames vars ids infos datas monitors
 
                 writeFile rosFileName rosFileContents
+
+                let rosFileName =
+                      targetDir </> "src" </> "copilot_logger.cpp"
+                    rosFileContents =
+                      unlines $
+                        logger varNames vars ids infos datas monitors
+
+                writeFile rosFileName rosFileContents
+
                 return Success
 
 -- | Predefined list of ROS variables that are known to Ogma
@@ -250,7 +259,7 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
     msgHandlerInClass monitor =
         [ "    // Report monitor violations to the log and publish them."
         , "    void " ++ handlerName ++ "() {"
-        , "      RCLCPP_INFO(this->get_logger(), " ++ show handlerName ++ ");"
+        , "      // RCLCPP_INFO(this->get_logger(), " ++ show handlerName ++ ");"
         , "      auto output = " ++ ty ++ "();"
         , "      " ++ publisher ++ "->publish(output);"
         , "    }"
@@ -400,6 +409,108 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
       where
         ty        = "std_msgs::msg::Empty"
         publisher = nm ++ "_publisher_"
+
+-- | Return the contents of the logger ROS application.
+logger :: [String]     -- Variables
+       -> [VarDecl]
+       -> [MsgInfoId]
+       -> [MsgInfo]
+       -> [MsgData]
+       -> [String]     -- Monitors
+       -> [String]
+logger varNames variables msgIds msgNames msgDatas monitors =
+    rosFileContents
+
+  where
+
+    rosFileContents =
+      [ "#include <functional>"
+      , "#include <memory>"
+      , ""
+      , "#include \"rclcpp/rclcpp.hpp\""
+      , ""
+      , typeIncludes
+      , "using std::placeholders::_1;"
+      , ""
+      , "class CopilotLogger : public rclcpp::Node {"
+      , "  public:"
+      , "    CopilotLogger() : Node(\"copilotlogger\") {"
+      , msgSubscriptionS
+      , "    }"
+      , ""
+      , "  private:"
+      , msgCallbacks
+      , msgSubscriptionDeclrs
+      , "};"
+      , ""
+      , "int main(int argc, char* argv[]) {"
+      , "  rclcpp::init(argc, argv);"
+      , "  rclcpp::spin(std::make_shared<CopilotLogger>());"
+      , "  rclcpp::shutdown();"
+      , "  return 0;"
+      , "}"
+      ]
+
+    typeIncludes = unlines
+      [ "#include \"std_msgs/msg/empty.hpp\""
+      ]
+
+    msgSubscriptionS     = unlines
+                         $ concat
+                         $ intersperse [""]
+                         $ map toMsgSubscription monitors
+    toMsgSubscription nm =
+        [ "      " ++ subscription
+                   ++ " = this->create_subscription<" ++ ty ++ ">("
+        , "        \"" ++ topic ++ "\", " ++ show unknownVar ++ ","
+        , "        std::bind(&CopilotLogger::" ++ callback ++ ", this, _1));"
+        ]
+      where
+        ty           = "std_msgs::msg::Empty"
+        topic        = "copilot/" ++ nm
+        subscription = nm ++ "_subscription_"
+        callback     = nm ++ "_callback"
+
+        unknownVar   :: Int
+        unknownVar   = 10
+
+    varDeclMsgType varDecl = case varDeclType varDecl of
+      "uint8_t"  -> "std_msgs::msg::UInt8"
+      "uint16_t" -> "std_msgs::msg::UInt16"
+      "uint32_t" -> "std_msgs::msg::UInt32"
+      "uint64_t" -> "std_msgs::msg::UInt64"
+      "int8_t"   -> "std_msgs::msg::Int8"
+      "int16_t"  -> "std_msgs::msg::Int16"
+      "int32_t"  -> "std_msgs::msg::Int32"
+      "int64_t"  -> "std_msgs::msg::Int64"
+      def        -> def
+
+    msgCallbacks = unlines
+                 $ concat
+                 $ intersperse [""]
+                 $ map toCallback monitors
+    toCallback varDecl =
+        [ "    void " ++ callback
+                      ++ "(const " ++ ty ++ "::SharedPtr msg) const {"
+        , "      RCLCPP_INFO(this->get_logger(), \"Copilot monitor violation: " ++ varDecl ++ "\");"
+        , "    }"
+        ]
+      where
+        ty = "std_msgs::msg::Empty"
+        callback = varDecl ++ "_callback"
+
+    msgSubscriptionDeclrs :: String
+    msgSubscriptionDeclrs = unlines
+                          $ concat
+                          $ intersperse [""]
+                          $ map toSubscriptionDecl monitors
+    toSubscriptionDecl nm =
+        [ "    rclcpp::Subscription<" ++ ty ++ ">::SharedPtr "
+            ++ subscription ++ ";"
+        ]
+      where
+        ty           = "std_msgs::msg::Empty"
+        subscription = nm ++ "_subscription_"
 
 -- * Exception handlers
 
