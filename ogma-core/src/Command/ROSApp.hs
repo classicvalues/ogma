@@ -379,14 +379,14 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
     msgSubscriptionDeclrs = unlines
                           $ concat
                           $ intersperse [""]
-                          $ map toSubscriptionDecl variables
+                          $ map toSubscriptionDecl monitors
     toSubscriptionDecl nm =
         [ "    rclcpp::Subscription<" ++ ty ++ ">::SharedPtr "
             ++ subscription ++ ";"
         ]
       where
-        ty           = varDeclMsgType nm
-        subscription = varDeclName nm ++ "_subscription_"
+        ty           = "std_msgs::msg::Empty"
+        subscription = nm ++ "_subscription_"
 
     msgPublisherDeclrs :: String
     msgPublisherDeclrs = unlines
