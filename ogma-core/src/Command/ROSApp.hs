@@ -309,8 +309,8 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
     msgSubscriptionS     = unlines
                          $ concat
                          $ intersperse [""]
-                         $ map toMsgSubscription variables
-    toMsgSubscription nm =
+                         $ map toMsgSubscription (zip variables msgIds)
+    toMsgSubscription (nm, msgId) =
         [ "      " ++ subscription
                    ++ " = this->create_subscription<" ++ ty ++ ">("
         , "        \"" ++ topic ++ "\", " ++ show unknownVar ++ ","
@@ -318,7 +318,7 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
         ]
       where
         ty           = varDeclMsgType nm
-        topic        = varDeclName nm
+        topic        = msgId -- varDeclName nm
         subscription = varDeclName nm ++ "_subscription_"
         callback     = varDeclName nm ++ "_callback"
 
@@ -388,14 +388,14 @@ fileContents varNames variables msgIds msgNames msgDatas monitors =
     msgSubscriptionDeclrs = unlines
                           $ concat
                           $ intersperse [""]
-                          $ map toSubscriptionDecl monitors
+                          $ map toSubscriptionDecl variables
     toSubscriptionDecl nm =
         [ "    rclcpp::Subscription<" ++ ty ++ ">::SharedPtr "
             ++ subscription ++ ";"
         ]
       where
-        ty           = "std_msgs::msg::Empty"
-        subscription = nm ++ "_subscription_"
+        ty           = varDeclMsgType nm
+        subscription = varDeclName nm ++ "_subscription_"
 
     msgPublisherDeclrs :: String
     msgPublisherDeclrs = unlines
